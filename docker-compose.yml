@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  mysql_db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: fan99718
+      MYSQL_DATABASE: ai_surveillance
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  redis_cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # 后端开发版服务
+  server_app:
+    build: ./server
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:fan99718@mysql_db:3306/ai_surveillance
+      - REDIS_HOST=redis_cache
+      - REDIS_PORT=6379
+      - NODE_ENV=development
+    # 核心：实现宿主机与容器的实时同步
+    volumes:
+      - ./server:/app            # 映射源码目录
+      - /app/node_modules        # 保护容器内依赖不被宿主机 node_modules 覆盖 (非常重要)
+    depends_on:
+      - mysql_db
+      - redis_cache
+
+volumes:
+  mysql_data:

@@ -1,0 +1,17 @@
+# 跨域白名单配置
+system:
+  cors_whitelist:
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+    - "http://127.0.0.1:5173"
+  log_level: "debug"
+  max_retries: 3
+  health_check_interval: 30
+
+# 认证策略配置 (支持类若依多模式扩展)
+auth:
+  captcha_enabled: false # 是否开启验证码系统
+  login_methods: # 开启的登录方式
+    account: true # 账号密码登录
+    email: true # 邮箱登录
+

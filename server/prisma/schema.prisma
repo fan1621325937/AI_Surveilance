@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表 (参考 RuoYi 系统架构扩展)
+model User {
+  id              String      @id @default(uuid())  // 用户ID
+  username        String      @unique               // 用户账号
+  nickname        String?                           // 用户昵称
+  password        String                            // 密码 (加密存储)
+  email           String?     @unique               // 用户邮箱
+  phone           String?     @unique               // 手机号码
+  gender          String?     @default("0")         // 用户性别 (0男 1女 2未知)
+  avatar          String?                           // 头像地址
+  status          String      @default("0")         // 帐号状态 (0正常 1停用)
+  delFlag         String      @default("0")         // 删除标志 (0代表存在 2代表删除)
+  loginIp         String?                           // 最后登录IP
+  loginDate       DateTime?                         // 最后登录时间
+  loginUserAgent  String?     @db.Text              // 最后登录设备指纹 (User-Agent)
+  remark          String?     @db.Text              // 备注
+  
+  // 个性化配置 (支持不同主页布局、显示偏好等)
+  layoutConfig    String?     @db.Text              // 主页布局配置 (存储 JSON 字符串)
+  preferences     String?     @db.Text              // 用户偏好设置 (如摄像头显示模式、算法查看偏好等)
+
+  createdAt       DateTime    @default(now())       // 创建时间
+  updatedAt       DateTime    @updatedAt            // 更新时间
+
+  // 关联属性
+  roles           Role[]      @relation("UserRoles")
+  permissions     Permission[] @relation("UserPermissions")
+  devices         Device[]    @relation("UserDevices")
+  records         Record[]    @relation("UserRecords")
+}
+
+// 关联表占位定义
+model Role {
+  id    String @id @default(uuid())
+  users User[] @relation("UserRoles")
+}
+
+model Permission {
+  id    String @id @default(uuid())
+  users User[] @relation("UserPermissions")
+}
+
+model Device {
+  id    String @id @default(uuid())
+  users User[] @relation("UserDevices")
+}
+
+model Record {
+  id    String @id @default(uuid())
+  users User[] @relation("UserRecords")
+}
