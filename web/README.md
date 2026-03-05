@@ -54,11 +54,20 @@ npm run dev
 
 ```text
 src/
-├── api/            # 服务层定义与 Axios 拦截器
-├── components/     # UI 组件与业务原子组件
-├── layouts/        # 响应式布局 (MainLayout, AuthLayout)
-├── pages/          # 业务逻辑页面 (Dashboard, Login)
-├── store/          # Zustand 状态仓库
-├── utils/          # Web Crypto (RSA-OAEP), 格式化工具
-└── router/         # 权限守卫与路由表
+├── main.tsx        # React 根骨架：注入 QueryProvider, Toaster 等全局服务
+├── App.tsx         # 全局顶层容器
+├── router/         # 路由配置机：通过 createBrowserRouter 定义路由与鉴权守卫 (AuthGuard)
+├── layouts/        # 布局骨架层：系统的 UI 大框架骨架 (如 MainLayout, 各种菜单导航)
+├── pages/          # 页面级容器：与 Router 绑定的核心容器，负责组合 Component 与远端数据拉取
+├── components/     # 组件库层 (无状态/弱状态)：高度独立可复用的 UI 单元 (UI 库、图表封装等)
+├── hooks/          # 自定义 Hooks 层：封装复杂的 React 渲染副作用逻辑
+├── store/          # 客户端状态库 (Zustand)：存放全局共享状态 (如 UserInfo, Theme 等)
+├── api/            # 接口定义层：Axios 实例配置，统一聚合管理远端 RESTful API 请求
+├── lib/            # 第三方库桥接层：对外界库进行统一暴露或覆写 (如 shadcn 的工具库、QueryClient)
+├── utils/          # 纯函数层：完全脱离 React 生命周期的通用 js 转换方法 (Crypto加密, 字符处理等)
+└── assets/         # 静态资源层：直接参与 Vite 编译链的图片资源与全局基础 CSS
 ```
+
+> **💡 前端组件拆分黄金法则 (Separation of Concerns)**:
+> 区分**容器组件** ("聪明的", `pages`) 和**木偶组件** ("笨的", `components`)。
+> `components` 不应该主动发起请求获取存库数据，而是通过 `props` 接收并渲染。重型异步数据流应上浮到 `pages` 层使用 React Query 管理。

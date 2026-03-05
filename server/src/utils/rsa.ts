@@ -6,8 +6,8 @@ import logger from "./logger.js";
  * 基于 Node.js 原生 crypto 模块实现
  */
 export class RsaUtils {
-  private static privateKey: string;
-  private static publicKey: string;
+  private static privateKey: string; // 私钥服务端用与解密
+  private static publicKey: string; // 公钥给前端用与加密
 
   /**
    * 初始化/获取 RSA 密钥对
@@ -18,14 +18,14 @@ export class RsaUtils {
 
     try {
       const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-        modulusLength: 2048,
+        modulusLength: 2048, // 指定密钥长度
         publicKeyEncoding: {
-          type: "spki",
-          format: "pem",
+          type: "spki", // spki: SubjectPublicKeyInfo
+          format: "pem", // pem: Base64 编码
         },
         privateKeyEncoding: {
-          type: "pkcs8",
-          format: "pem",
+          type: "pkcs8", // pkcs8: PrivateKeyInfo
+          format: "pem", // pem: Base64 编码
         },
       });
 
@@ -54,12 +54,12 @@ export class RsaUtils {
     try {
       if (!this.privateKey) this.initKeys();
 
-      const buffer = Buffer.from(encryptedData, "base64");
+      const buffer = Buffer.from(encryptedData, "base64"); // Base64 解码
       const decrypted = crypto.privateDecrypt(
         {
-          key: this.privateKey,
-          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-          oaepHash: "sha256",
+          key: this.privateKey, // 私钥
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, // 指定填充方式
+          oaepHash: "sha256", // 指定 OAEP 填充的哈希算法
         },
         buffer,
       );

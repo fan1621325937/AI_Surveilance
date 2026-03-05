@@ -21,6 +21,8 @@ export class AuthService {
    */
   static async login(params: Record<string, any>) {
     try {
+      console.log(params, "paramsparams");
+
       // 1. 提取标识符 (用于限流和锁定预检)
       const loginType = (params.loginType ||
         "account") as keyof typeof config.auth.login_methods;
@@ -33,9 +35,12 @@ export class AuthService {
         "unknown") as string;
       const lockKey = JwtUtils.getLockKey(identifier);
       const attemptKey = JwtUtils.getAttemptKey(identifier);
+      console.log(lockKey, "lockKey");
+      console.log(attemptKey, "attemptKey");
 
       // 2. 账号锁定预检查
       const isLocked = await redis.get(lockKey);
+      console.log(isLocked, "isLocked");
       if (isLocked) {
         throw {
           status: 403,

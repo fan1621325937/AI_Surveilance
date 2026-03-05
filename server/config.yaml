@@ -4,6 +4,8 @@ system:
     - "http://localhost:5173"
     - "http://localhost:3000"
     - "http://127.0.0.1:5173"
+    - "http://localhost:8088"
+    - "http://127.0.0.1:8088"
   log_level: "debug"
   max_retries: 3
   health_check_interval: 30

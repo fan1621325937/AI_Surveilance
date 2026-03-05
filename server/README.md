@@ -8,24 +8,27 @@
 
 服务端采用分层式架构，确保业务逻辑与底层实现解耦：
 
-```text
 server/
-├── prisma/                # [Prisma ORM 层]
-│   └── schema.prisma      # 数据库模型定义文件（核心）
-├── src/                   # [源代码目录]
-│   ├── app.ts             # 应用主入口，配置中间件与路由入口
-│   ├── controllers/       # 控制层：处理具体业务逻辑 (如登录、验证码)
-│   ├── services/          # 服务层：核心业务 (如 AuthService 实现)
-│   ├── routes/            # 路由定义：包含路由入口 index.ts
-│   ├── middlewares/       # 中间件：包含全局错误处理 error.middleware.ts
-│   ├── utils/             # 工具类：Logger, Crypto, JWT, 验证码缓存
-│   └── ...
-├── .env                   # 环境变量：数据库 URL、机密密钥
-├── config.yaml            # 业务配置：系统基础设置
-├── prisma/                # 数据库 Schema：采用类若依权限架构
-├── logs/                  # 日志目录：自动生成并按天滚动
-└── README.md              # 本文档
-```
+├── prisma/ # [Prisma ORM 层] 包含 schema.prisma 模型定义文件
+├── src/ # [源代码核心目录]
+│ ├── app.ts # 应用主入口，挂载全局安全中间件、CORS 与 根路由
+│ ├── config/ # 配置解析层：处理 .env 与 config.yaml 的混合覆写逻辑，不含业务
+│ ├── controllers/ # 控制器层：负责解析请求 (req)，参数校验，并返回响应 (res)
+│ ├── services/ # 服务层 (重型武器库)：最核心层！负责所有复杂业务算法与数据存取
+│ ├── routes/ # 路由层：定义 API 端点 (URL) 与 Controller 的映射关系
+│ ├── middlewares/ # 中间件层：鉴权卫士 (RateLimit防刷、全局 ErrorHandler 等)
+│ ├── models/ # 模型封装层：封装特定的 Prisma 复杂查询组装逻辑
+│ ├── strategies/ # 策略层：如处理类若依架构的不同维度认证策略
+│ └── utils/ # 工具类：无状态的纯函数集合 (Logger, Crypto, CaptchaCache)
+├── .env # [不进 Git] 环境变量：如机密密钥、数据库账号等
+├── config.yaml # 业务运行配置：跨域白名单、业务默认重试次数等
+├── logs/ # 日志输出目录：基于 pino-roll 按天滚动归档
+└── README.md # 本文档
+
+````
+
+> **💡 后端代码提交黄金法则 (Separation of Concerns)**:
+> 严禁在 `controllers` 层直接写查库代码。所有的复杂业务必须下沉到 `services`，`controllers` 应当保持尽可能地"薄"，只负责**参数拦截**与**服务调度**。
 
 ---
 
@@ -121,7 +124,7 @@ REDIS_DB=0
 # 邮件配置
 SMTP_USER="592416554@qq.com"
 SMTP_PASS="你的授权码"
-```
+````
 
 ### 2. 数据模型同步
 

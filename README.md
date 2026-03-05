@@ -1,5 +1,7 @@
 # Ai Surveillance (企业级全场景智能监控系统)
 
+![CI/CD](https://github.com/fan1621325937/AI_Surveilance/actions/workflows/ci.yml/badge.svg)
+
 本项目是一个全栈式 AI 视频监控管理平台，集成了实时视频流处理、智能算法分析、多端管理展示等核心功能。
 
 ---

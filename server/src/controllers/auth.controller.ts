@@ -26,8 +26,8 @@ export class AuthController {
       // 1. 执行登录逻辑 (全量透传 Body + IP + UA，由策略层动态处理)
       const result = await AuthService.login({
         ...req.body,
-        clientIp: req.ip || req.socket.remoteAddress || "0.0.0.0",
-        userAgent: req.headers["user-agent"] || "Unknown",
+        clientIp: req.ip || req.socket.remoteAddress || "0.0.0.0", // IP 用来识别设备
+        userAgent: req.headers["user-agent"] || "Unknown", // User-Agent用来识别浏览器
       });
 
       // 4. 将 Token 写入 HttpOnly Cookie

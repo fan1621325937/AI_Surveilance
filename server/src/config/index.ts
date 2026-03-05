@@ -78,6 +78,13 @@ const parseJsonEnv = (key: string, fallback: any) => {
 // 5. 整合配置并导出
 export const config: Config = {
   ...yamlConfig,
+  system: {
+    ...yamlConfig.system,
+    cors_whitelist: parseJsonEnv(
+      "CORS_WHITELIST",
+      yamlConfig.system?.cors_whitelist || [],
+    ),
+  },
   auth: {
     captcha_enabled: process.env.SHOW_CAPTCHA
       ? process.env.SHOW_CAPTCHA.split("//")[0]?.trim() === "true"
