@@ -2,9 +2,17 @@ import nodemailer from "nodemailer";
 import config from "../config/index.js";
 import logger from "./logger.js";
 
+/** 邮件重试配置 */
+const MAIL_RETRY_ATTEMPTS = 3;
+const MAIL_RETRY_DELAY = 2000; // 毫秒
+
 /**
- * 邮件服务工具类
- * 封装了基于 SMTP 的邮件发送功能，支持 HTML 和附件
+ * 邮件服务工具类 (企业级版本)
+ *
+ * 改进点：
+ * 1. 自动重试机制（最多 3 次）
+ * 2. 指数退避延迟
+ * 3. 结构化日志记录
  */
 export class MailUtils {
   private static transporter = nodemailer.createTransport({
@@ -18,12 +26,14 @@ export class MailUtils {
   });
 
   /**
-   * 发送简单 HTML 邮件
-   * @param to 收件人地址
-   * @param subject 邮件主题
-   * @param html HTML 内容
+   * 发送 HTML 邮件（带自动重试）
    */
-  static async sendMail(to: string, subject: string, html: string) {
+  static async sendMail(
+    to: string,
+    subject: string,
+    html: string,
+    attempt = 1,
+  ): Promise<void> {
     try {
       const info = await this.transporter.sendMail({
         from: `"${config.mail.fromName}" <${config.mail.user}>`,
@@ -33,19 +43,28 @@ export class MailUtils {
       });
 
       logger.info(`📧 Email sent successfully to [${to}]: ${info.messageId}`);
-      return info;
     } catch (error) {
-      logger.error(error, `❌ Failed to send email to [${to}]`);
-      throw { status: 500, message: "邮件发送失败，请检查系统配置" };
+      logger.error(
+        { error, attempt, to, subject },
+        `❌ Failed to send email (Attempt ${attempt}/${MAIL_RETRY_ATTEMPTS})`,
+      );
+
+      // 自动重试（指数退避）
+      if (attempt < MAIL_RETRY_ATTEMPTS) {
+        const delay = MAIL_RETRY_DELAY * Math.pow(2, attempt - 1);
+        logger.info(`🔄 Retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.sendMail(to, subject, html, attempt + 1);
+      }
+
+      throw new Error(`邮件发送失败（已重试 ${MAIL_RETRY_ATTEMPTS} 次）`);
     }
   }
 
   /**
    * 发送验证码邮件 (预设模板)
-   * @param to 收件人地址
-   * @param code 验证码
    */
-  static async sendVerificationCode(to: string, code: string) {
+  static async sendVerificationCode(to: string, code: string): Promise<void> {
     const subject = "数字验证码 - AI监控系统鉴权";
     const html = `
       <div style="padding: 20px; background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -69,8 +88,3 @@ export class MailUtils {
     return this.sendMail(to, subject, html);
   }
 }
-
-// nodemailer常用api
-// nodemailer.createTransport(options) //创建传输对象
-// transporter.sendMail(mailOptions) //发送邮件
-// transporter.verify() //验证连接配置

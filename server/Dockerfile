@@ -1,28 +1,45 @@
-# 1. 基础镜像：使用轻量级的 Node.js 20 镜像 (Alpine 版)
-FROM node:20-alpine
+# 1. 基础镜像（构建阶段）
+FROM node:20-alpine AS builder
 
-# 2. 设置容器内的工作目录
 WORKDIR /app
 
-# 3. 复制依赖清单
-# 这里的小技巧是先只复制 package*.json，这样如果只有代码变动，构建时会直接使用缓存的依赖层
+# 仅复制依赖清单（利用 Docker 缓存层）
 COPY package*.json ./
 
-# 4. 安装生产依赖
-RUN npm install
+# 安装全部依赖（含 devDependencies，用于编译）
+RUN npm ci
 
-# 5. 复制所有项目源码到容器中
+# 复制源码
 COPY . .
 
-# 6. 生成 Prisma 代码 (根据 schema.prisma 同步 Client)
+# 生成 Prisma Client
 RUN npx prisma generate
 
-# 7. 编译 TypeScript 代码为原生 JavaScript
+# 编译 TypeScript
 RUN npm run build
 
-# 8. 声明容器运行时监听的端口
+# 2. 生产运行镜像（精简体积）
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# 仅复制生产依赖
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# 从构建阶段复制编译产物
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/config.yaml ./config.yaml
+
+# 声明端口
 EXPOSE 3000
 
-# 9. 启动应用
-# 使用生产环境模式运行
-CMD ["npm", "start"]
+# 非 root 用户运行（安全加固）
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeuser -u 1001
+USER nodeuser
+
+# 启动应用
+CMD ["node", "dist/app.js"]

@@ -2,6 +2,8 @@ import { type Request, type Response } from "express";
 import svgCaptcha from "svg-captcha";
 import { v4 as uuidv4 } from "uuid";
 import { CaptchaUtils } from "../utils/captcha-cache.js";
+import { R } from "../utils/response.js";
+import logger from "../utils/logger.js";
 
 /**
  * 验证码控制器
@@ -20,23 +22,17 @@ export class CaptchaController {
         background: "#f0f0f0",
       });
 
-      if (!captcha || !captcha.text) {
+      if (!captcha?.text) {
         throw new Error("Captcha generation failure");
       }
 
       const captchaId = uuidv4();
       await CaptchaUtils.set(captchaId, captcha.text);
 
-      res.json({
-        code: 200,
-        captchaId,
-        img: captcha.data,
-      });
+      R.ok(res, { captchaId, img: captcha.data });
     } catch (error) {
-      res.status(500).json({
-        code: 500,
-        message: "获取验证码失败",
-      });
+      logger.error(error, "Failed to generate captcha");
+      R.fail(res, 500, "获取验证码失败");
     }
   }
 
@@ -53,23 +49,17 @@ export class CaptchaController {
         color: true,
       });
 
-      if (!captcha || !captcha.text) {
+      if (!captcha?.text) {
         throw new Error("Math captcha generation failure");
       }
 
       const captchaId = uuidv4();
       await CaptchaUtils.set(captchaId, captcha.text);
 
-      res.json({
-        code: 200,
-        captchaId,
-        img: captcha.data,
-      });
+      R.ok(res, { captchaId, img: captcha.data });
     } catch (error) {
-      res.status(500).json({
-        code: 500,
-        message: "Failed to generate math captcha",
-      });
+      logger.error(error, "Failed to generate math captcha");
+      R.fail(res, 500, "获取数学验证码失败");
     }
   }
 }

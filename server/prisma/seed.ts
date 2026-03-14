@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seeding...");
 
-  // 1. 初始化管理员账号
-  const adminUsername = "admin";
-  const adminPassword = "admin123"; // 默认初始密码
+  // 从环境变量获取管理员初始密码（不再硬编码）
+  const adminUsername = process.env.ADMIN_USERNAME || "admin";
+  const adminPassword = process.env.ADMIN_INIT_PASSWORD || generateRandomPassword();
 
   const existingAdmin = await prisma.user.findUnique({
     where: { username: adminUsername },
@@ -22,13 +22,14 @@ async function main() {
         nickname: "超级管理员",
         password: hashedPassword,
         status: "0",
-        loginUserAgent: "System Initialization", // 登录用户代理用来记录登录设备信息
+        loginUserAgent: "System Initialization",
         remark: "系统初始化自动生成的顶级管理员",
       } as any,
     });
-    console.log(
-      `✅ Admin user created! (Username: ${adminUsername}, Password: ${adminPassword})`,
-    );
+    console.log(`✅ Admin user created!`);
+    console.log(`   Username: ${adminUsername}`);
+    console.log(`   Password: ${adminPassword}`);
+    console.log(`   ⚠️ 请务必在首次登录后修改密码！`);
   } else {
     console.log("ℹ️ Admin user already exists, skipping.");
   }
@@ -36,10 +37,24 @@ async function main() {
   console.log("🏁 Seeding finished.");
 }
 
+/**
+ * 生成随机安全密码
+ * 包含大小写字母、数字、特殊字符
+ */
+function generateRandomPassword(length = 16): string {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
 main()
   .catch((e) => {
     console.error("❌ Seeding failed!");
-    console.error(e); // 打印完整错误堆栈以便排查 (如数据库连接或字段缺失)
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

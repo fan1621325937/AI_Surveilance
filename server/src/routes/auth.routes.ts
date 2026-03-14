@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller.js";
 import { CaptchaController } from "../controllers/captcha.controller.js";
-import { loginRateLimiter } from "../middlewares/rate-limit.middleware.js";
+import {
+  loginIpRateLimiter,
+  loginAccountRateLimiter,
+} from "../middlewares/rate-limit.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -20,14 +24,25 @@ router.get("/captcha", CaptchaController.getCaptcha);
 /**
  * 用户登录接口
  * POST /auth/login
- * 已集成 Redis 分布式限流防护
+ * 集成双维度限流：IP 限流 + 账号名限流
  */
-router.post("/login", loginRateLimiter, AuthController.login);
+router.post(
+  "/login",
+  loginIpRateLimiter,
+  loginAccountRateLimiter,
+  AuthController.login,
+);
 
 /**
- * 退出登录
+ * 刷新 Token
+ * POST /auth/refresh
+ */
+router.post("/refresh", AuthController.refresh);
+
+/**
+ * 退出登录（需鉴权）
  * POST /auth/logout
  */
-router.post("/logout", AuthController.logout);
+router.post("/logout", authMiddleware, AuthController.logout);
 
 export default router;
