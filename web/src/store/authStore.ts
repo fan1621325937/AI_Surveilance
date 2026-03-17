@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { UserInfo } from "../api/auth";
 
 interface AuthState {
+  /** 当前用户信息（对齐后端 LoginUserInfo） */
   user: UserInfo | null;
   isAuthenticated: boolean;
   setAuth: (user: UserInfo) => void;

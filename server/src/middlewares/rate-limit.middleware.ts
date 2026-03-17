@@ -49,10 +49,10 @@ export const loginAccountRateLimiter = rateLimit({
   windowMs: config.auth.rate_limit.window_ms,
   max: config.auth.rate_limit.max_attempts,
 
-  // 使用请求体中的账号名作为限流标识
+  // 使用请求体中的账号名作为限流标识（不使用 req.ip 避免 IPv6 兼容性问题）
   keyGenerator: (req) => {
     return (
-      req.body?.username || req.body?.email || req.body?.identifier || req.ip || "unknown"
+      req.body?.username || req.body?.email || req.body?.identifier || "unknown"
     );
   },
 

@@ -14,12 +14,15 @@ export default function MainLayout() {
     const { pathname } = useLocation();
 
     const handleLogout = async () => {
+        // 先清除本地状态并跳转（确保无论 API 是否成功都能退出）
+        clearAuth();
+        navigate("/login", { replace: true });
+
+        // 后台异步通知后端撤销 Token（Best-effort，不阻塞退出流程）
         try {
             await authApi.logout();
-            clearAuth();
-            navigate("/login");
-        } catch (error) {
-            console.error("Logout failed", error);
+        } catch {
+            // 静默失败：Token 过期后后端会自动失效
         }
     };
 
@@ -64,8 +67,8 @@ export default function MainLayout() {
                             <User size={20} className="text-slate-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate text-white">{user?.username || "Admin"}</p>
-                            <p className="text-xs text-slate-500 truncate capitalize">{user?.role || "Administrator"}</p>
+                            <p className="text-sm font-semibold truncate text-white">{user?.nickname || user?.username || "Admin"}</p>
+                            <p className="text-xs text-slate-500 truncate capitalize">管理员</p>
                         </div>
                     </div>
                     <Button

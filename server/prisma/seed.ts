@@ -6,7 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seeding...");
 
-  // 从环境变量获取管理员初始密码（不再硬编码）
+  // 生产环境跳过顶级管理员创建（线上通过运维工具或 API 注册）
+  if (process.env.NODE_ENV === "production") {
+    console.log("⏩ Production mode detected, skipping admin creation.");
+    console.log("🏁 Seeding finished.");
+    return;
+  }
+
+  // 本地开发：从环境变量获取管理员初始密码
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_INIT_PASSWORD || generateRandomPassword();
 
@@ -31,7 +38,15 @@ async function main() {
     console.log(`   Password: ${adminPassword}`);
     console.log(`   ⚠️ 请务必在首次登录后修改密码！`);
   } else {
-    console.log("ℹ️ Admin user already exists, skipping.");
+    // 本地开发：已有用户时直接重置密码（方便调试）
+    const hashedPassword = await argon2.hash(adminPassword);
+    await prisma.user.update({
+      where: { username: adminUsername },
+      data: { password: hashedPassword },
+    });
+    console.log(`🔄 Admin user already exists, password has been reset.`);
+    console.log(`   Username: ${adminUsername}`);
+    console.log(`   Password: ${adminPassword}`);
   }
 
   console.log("🏁 Seeding finished.");

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,21 +31,20 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [captcha, setCaptcha] = useState<{ id: string; img: string } | null>(null);
 
-    // 获取验证码
-    const fetchCaptcha = async () => {
+    // 获取验证码（拦截器已解包，直接返回 { captchaId, img }）
+    const fetchCaptcha = useCallback(async () => {
         try {
-            const res = await authApi.getCaptcha();
-
-            setCaptcha({ id: res.captchaId, img: res.img });
+            const { captchaId, img } = await authApi.getCaptcha();
+            setCaptcha({ id: captchaId, img });
         } catch (error) {
             console.error('Failed to fetch captcha', error);
             toast.error('获取验证码失败');
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchCaptcha();
-    }, []);
+    }, [fetchCaptcha]);
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -59,7 +58,7 @@ export default function Login() {
     const onSubmit = async (values: LoginFormValues) => {
         setLoading(true);
         try {
-            // 1. 获取公钥
+            // 1. 获取公钥（拦截器已解包，直接返回 { publicKey }）
             const { publicKey } = await authApi.getPublicKey();
 
             // 2. RSA 加密密码
@@ -70,8 +69,8 @@ export default function Login() {
                 throw new Error('加密组件初始化失败');
             }
 
-            // 3. 提交登录
-            const res = await authApi.login({
+            // 3. 提交登录（拦截器已解包，直接返回 { user }）
+            const { user } = await authApi.login({
                 username: values.username,
                 password: encryptedPassword,
                 captchaId: captcha?.id,
@@ -79,10 +78,11 @@ export default function Login() {
             });
 
             // 4. 更新状态并跳转
-            setAuth(res.data.user);
+            setAuth(user);
             toast.success('登录成功', { description: '欢迎进入 Ai Surveillance 系统' });
             navigate('/', { replace: true });
         } catch (error) {
+            // 拦截器已统一处理错误提示，这里只刷新验证码
             fetchCaptcha();
             form.setValue('captchaCode', '');
         } finally {
@@ -112,7 +112,7 @@ export default function Login() {
                                 <FormField
                                     control={form.control}
                                     name="username"
-                                    render={({ field }: { field: any }) => (
+                                    render={({ field }) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-slate-700 font-semibold ml-1">用户名</FormLabel>
                                             <FormControl>
@@ -130,7 +130,7 @@ export default function Login() {
                                 <FormField
                                     control={form.control}
                                     name="password"
-                                    render={({ field }: { field: any }) => (
+                                    render={({ field }) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-slate-700 font-semibold ml-1">密码</FormLabel>
                                             <FormControl>
@@ -149,7 +149,7 @@ export default function Login() {
                                 <FormField
                                     control={form.control}
                                     name="captchaCode"
-                                    render={({ field }: { field: any }) => (
+                                    render={({ field }) => (
                                         <FormItem className="space-y-1.5">
                                             <FormLabel className="text-slate-700 font-semibold ml-1">验证码</FormLabel>
                                             <div className="flex gap-3">
